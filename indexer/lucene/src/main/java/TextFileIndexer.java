@@ -99,7 +99,7 @@ public class TextFileIndexer {
                 for(int i=0;i<hits.length;++i) {
                     int docId = hits[i].doc;
                     Document d = searcher.doc(docId);
-                    System.out.println((i + 1) + ". " + d.get("path") + " score=" + hits[i].score);
+                    System.out.println((i + 1) + ". " + d.get("url") + " score=" + hits[i].score);
                 }
 
             } catch (Exception e) {
@@ -144,8 +144,6 @@ public class TextFileIndexer {
             try {
                 Document doc = new Document();
 
-
-
                 //===================================================
                 // add contents of file
                 //===================================================
@@ -155,10 +153,12 @@ public class TextFileIndexer {
                 JsonElement jsonElement = JsonParser.parseReader(fr);
 //                System.out.println("what is json element: " + jsonElement);
                 String content = jsonElement.getAsJsonObject().get("text").getAsString();
-//                System.out.println("what is the file content: " + content);
+                String fileUrl = jsonElement.getAsJsonObject().get("url").getAsString();
+
                 doc.add(new TextField("contents", content, Field.Store.YES));
                 doc.add(new StringField("path", f.getPath(), Field.Store.YES));
                 doc.add(new StringField("filename", f.getName(), Field.Store.YES));
+                doc.add(new StringField("url", fileUrl, Field.Store.YES));
 
                 writer.addDocument(doc);
                 System.out.println("Added: " + f);
