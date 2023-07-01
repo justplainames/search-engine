@@ -13,8 +13,10 @@ import org.apache.lucene.store.ByteBuffersDirectory;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,8 +28,10 @@ public class DocumentIndexerService {
     private IndexWriter indexWriter;
     private static StandardAnalyzer analyzer = new StandardAnalyzer();
 
-    private List<File> queue = new ArrayList();
-    private final static Logger logger = Logger.getLogger("LuceneSearcher");
+    private List<MultipartFile> queue = new ArrayList();
+    private final static Logger logger = Logger.getLogger("DocumentIndexer");
+
+//    private final Path root = Paths.get("uploads");
 
     public DocumentIndexerService() throws IOException {
         String indexDir = "/tmp/index";
@@ -39,77 +43,95 @@ public class DocumentIndexerService {
 
     }
 
-    public void indexDocument(String fileName) throws IOException {
-        addFiles(new File(fileName));
+    public void indexDocument() throws IOException {
+//        addFiles(new File(fileName));
 
         int originalNumDocs = indexWriter.getDocStats().numDocs;
-        for (File f : queue) {
-            FileReader fr = null;
+
+        for (MultipartFile f : queue) {
+//            FileReader fr = null;
+//            Reader reader = null;
             try {
+                Reader reader = new InputStreamReader(f.getInputStream());
                 Document doc = new Document();
 
                 //===================================================
                 // add contents of file
                 //===================================================
-                fr = new FileReader(f);
+//                fr = new FileReader(f);
 
                 // accessing the 'text' key in fileReader
-                JsonElement jsonElement = JsonParser.parseReader(fr);
+                JsonElement jsonElement = JsonParser.parseReader(reader);
 //                System.out.println("what is json element: " + jsonElement);
                 String content = jsonElement.getAsJsonObject().get("text").getAsString();
                 String fileUrl = jsonElement.getAsJsonObject().get("url").getAsString();
 
+                logger.info("content:" +  content);
+                logger.info("fileUrl:" +  fileUrl);
+
                 doc.add(new TextField("contents", content, Field.Store.YES));
-                doc.add(new StringField("path", f.getPath(), Field.Store.YES));
-                doc.add(new StringField("filename", f.getName(), Field.Store.YES));
+//                doc.add(new StringField("path", f.getPath(), Field.Store.YES));
+                doc.add(new StringField("filename", f.getOriginalFilename(), Field.Store.YES));
                 doc.add(new StringField("url", fileUrl, Field.Store.YES));
 
                 indexWriter.addDocument(doc);
-                System.out.println("Added: " + f);
+                logger.info("Added doc: " + f);
             } catch (Exception e) {
-                System.out.println("Could not add: " + f);
-            } finally {
-                fr.close();
+                logger.info("could not add doc: " + f);
             }
+//            finally {
+//                reader.close();
+//            }
         }
 
         int newNumDocs = indexWriter.getDocStats().numDocs;
-        System.out.println("");
-        System.out.println("************************");
-        System.out.println((newNumDocs - originalNumDocs) + " documents added.");
-        System.out.println("************************");
-        System.out.println("index success");
+//        System.out.println("");
+//        System.out.println("************************");
+//        System.out.println((newNumDocs - originalNumDocs) + " documents added.");
+//        System.out.println("************************");
+//        System.out.println("index success");
+        logger.info("index success: " + (newNumDocs - originalNumDocs));
 
         queue.clear();
     }
-    private void addFiles(File file) throws IOException {
+    public String addFiles(MultipartFile file) throws IOException {
 
-        try(BufferedReader br = new BufferedReader(new FileReader(file))) {
-            String title = br.readLine();
-            logger.info(title);
-        }
+        String fileName = file.getOriginalFilename().toLowerCase();
+//        byte[] fileContent = file.getBytes();
+//        String content = new String(file.getBytes());
+        logger.info("what is filename: " + fileName);
+//        logger.info("what is content: " + content);
+//        logger.info("what is content: " + content);
+//        try(BufferedReader br = new BufferedReader(new FileReader(file))) {
+//            String title = br.readLine();
+//            logger.info(title);
+//        }
 
-        if (!file.exists()) {
+        if (!file.isEmpty()) {
             System.out.println(file + " does not exist.");
         }
+        //===================================================
+        // Only index text files
+        //===================================================
+        if (fileName.endsWith(".json") || fileName.endsWith(".html") ||
+                fileName.endsWith(".xml") || fileName.endsWith(".txt")) {
+            queue.add(file);
+            logger.info("added to queue");
+        } else {
+            System.out.println("Skipped " + fileName);
+        }
+
+        return fileName;
+
 
         // Check if input is a single file or directory
-        if (file.isDirectory()) {
-            for (File f : file.listFiles()) {
-                addFiles(f);
-            }
-        } else {
-            String filename = file.getName().toLowerCase();
-            //===================================================
-            // Only index text files
-            //===================================================
-            if (filename.endsWith(".json") || filename.endsWith(".html") ||
-                    filename.endsWith(".xml") || filename.endsWith(".txt")) {
-                queue.add(file);
-            } else {
-                System.out.println("Skipped " + filename);
-            }
-        }
+//        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
+//            for (File f : file.listFiles()) {
+//                addFiles(f);
+//            }
+//        } else {
+//            String filename = file.getName().toLowerCase();
+
     }
 
     public void closeIndexWriter() throws IOException {
