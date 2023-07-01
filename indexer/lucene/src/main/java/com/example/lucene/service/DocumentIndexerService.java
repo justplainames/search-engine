@@ -1,26 +1,33 @@
 package com.example.lucene.service;
 
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
+import org.apache.lucene.index.DirectoryReader;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
-import org.apache.lucene.store.ByteBuffersDirectory;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
+
 
 @Component
 public class DocumentIndexerService {
@@ -31,16 +38,43 @@ public class DocumentIndexerService {
     private List<MultipartFile> queue = new ArrayList();
     private final static Logger logger = Logger.getLogger("DocumentIndexer");
 
-//    private final Path root = Paths.get("uploads");
+    private static String indexDir = "/tmp/index";
+
 
     public DocumentIndexerService() throws IOException {
-        String indexDir = "/tmp/index";
         FSDirectory dir = FSDirectory.open(new File(indexDir).toPath());
-
-//        indexDirectory = new ByteBuffersDirectory();
         IndexWriterConfig writerConfig = new IndexWriterConfig(analyzer);
         indexWriter = new IndexWriter(dir, writerConfig);
 
+    }
+
+    public List<Map<String, String>> queryDocument(String query) throws IOException, ParseException {
+        closeIndexWriter();
+
+        IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexDir).toPath()));
+        IndexSearcher searcher = new IndexSearcher(reader);
+        TopScoreDocCollector collector = TopScoreDocCollector.create(5,20);
+        Map<String, String> keyValueMap = new HashMap<>();
+        List< Map<String, String>> keyValueList = new ArrayList<>();
+        Query q = new QueryParser("contents", analyzer).parse(query);
+
+        searcher.search(q, collector);
+
+        ScoreDoc[] hits = collector.topDocs().scoreDocs;
+
+        logger.info("Found" + hits.length + "hits.");
+
+        for(int i = 0 ; i < hits.length ; ++i ){
+            int docId = hits[i].doc;
+            Document d = searcher.doc(docId);
+            keyValueMap.put("index", String.valueOf(i+1));
+            keyValueMap.put("url", d.get("url"));
+            keyValueMap.put("title", d.get("title"));
+            keyValueMap.put("score", String.valueOf(hits[i].score));
+            keyValueList.add(keyValueMap);
+        }
+
+        return keyValueList;
     }
 
     public void indexDocument() throws IOException {
@@ -122,15 +156,6 @@ public class DocumentIndexerService {
         }
 
         return fileName;
-
-
-        // Check if input is a single file or directory
-//        if (file.getOriginalFilename() == null || file.getOriginalFilename().isEmpty()) {
-//            for (File f : file.listFiles()) {
-//                addFiles(f);
-//            }
-//        } else {
-//            String filename = file.getName().toLowerCase();
 
     }
 
