@@ -38,6 +38,7 @@ public class DocumentIndexerService {
     private List<MultipartFile> queue = new ArrayList();
     private final static Logger logger = Logger.getLogger("DocumentIndexer");
 
+    // The index directory needs to be set to allow indexing and retrieval of documents
     private static String indexDir = "/tmp/index";
 
 
@@ -49,8 +50,13 @@ public class DocumentIndexerService {
     }
 
     public List<Map<String, String>> queryDocument(String query) throws IOException, ParseException {
+
+        // index writer needs to be closed after the indexing
         closeIndexWriter();
 
+        //===================================================
+        // Search for files
+        //===================================================
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexDir).toPath()));
         IndexSearcher searcher = new IndexSearcher(reader);
         TopScoreDocCollector collector = TopScoreDocCollector.create(5,20);
@@ -78,13 +84,10 @@ public class DocumentIndexerService {
     }
 
     public void indexDocument() throws IOException {
-//        addFiles(new File(fileName));
 
         int originalNumDocs = indexWriter.getDocStats().numDocs;
 
         for (MultipartFile f : queue) {
-//            FileReader fr = null;
-//            Reader reader = null;
             try {
                 Reader reader = new InputStreamReader(f.getInputStream());
                 Document doc = new Document();
@@ -92,17 +95,15 @@ public class DocumentIndexerService {
                 //===================================================
                 // add contents of file
                 //===================================================
-//                fr = new FileReader(f);
 
                 // accessing the 'text' key in fileReader
                 JsonElement jsonElement = JsonParser.parseReader(reader);
-//                System.out.println("what is json element: " + jsonElement);
                 String content = jsonElement.getAsJsonObject().get("text").getAsString();
                 String fileUrl = jsonElement.getAsJsonObject().get("url").getAsString();
                 String title = jsonElement.getAsJsonObject().get("title").getAsString();
 
-                logger.info("content:" +  content);
-                logger.info("fileUrl:" +  fileUrl);
+//                logger.info("content:" +  content);
+//                logger.info("fileUrl:" +  fileUrl);
 
                 doc.add(new TextField("contents", content, Field.Store.YES));
 //                doc.add(new StringField("path", f.getPath(), Field.Store.YES));
@@ -115,17 +116,10 @@ public class DocumentIndexerService {
             } catch (Exception e) {
                 logger.info("could not add doc: " + f);
             }
-//            finally {
-//                reader.close();
-//            }
         }
 
         int newNumDocs = indexWriter.getDocStats().numDocs;
-//        System.out.println("");
-//        System.out.println("************************");
-//        System.out.println((newNumDocs - originalNumDocs) + " documents added.");
-//        System.out.println("************************");
-//        System.out.println("index success");
+
         logger.info("index success: " + (newNumDocs - originalNumDocs));
 
         queue.clear();
@@ -133,21 +127,14 @@ public class DocumentIndexerService {
     public String addFiles(MultipartFile file) throws IOException {
 
         String fileName = file.getOriginalFilename().toLowerCase();
-//        byte[] fileContent = file.getBytes();
-//        String content = new String(file.getBytes());
         logger.info("what is filename: " + fileName);
-//        logger.info("what is content: " + content);
-//        logger.info("what is content: " + content);
-//        try(BufferedReader br = new BufferedReader(new FileReader(file))) {
-//            String title = br.readLine();
-//            logger.info(title);
 //        }
 
         if (!file.isEmpty()) {
             System.out.println(file + " does not exist.");
         }
         //===================================================
-        // Only index text files
+        // Only index files in this certain format
         //===================================================
         if (fileName.endsWith(".json") || fileName.endsWith(".html") ||
                 fileName.endsWith(".xml") || fileName.endsWith(".txt")) {
