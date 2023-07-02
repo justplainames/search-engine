@@ -17,7 +17,7 @@ public class LuceneApplication {
 	public CommonsMultipartResolver multipartResolver() {
 		CommonsMultipartResolver resolver = new CommonsMultipartResolver();
 		// Set any additional configuration for the resolver if needed
-		resolver.setMaxUploadSize(5 * 1024 * 1024);
+		resolver.setMaxUploadSize(10 * 1024 * 1024);
 		return resolver;
 	}
 

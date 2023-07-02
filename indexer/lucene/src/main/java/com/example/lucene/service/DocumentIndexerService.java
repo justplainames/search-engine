@@ -99,6 +99,7 @@ public class DocumentIndexerService {
 //                System.out.println("what is json element: " + jsonElement);
                 String content = jsonElement.getAsJsonObject().get("text").getAsString();
                 String fileUrl = jsonElement.getAsJsonObject().get("url").getAsString();
+                String title = jsonElement.getAsJsonObject().get("title").getAsString();
 
                 logger.info("content:" +  content);
                 logger.info("fileUrl:" +  fileUrl);
@@ -107,6 +108,7 @@ public class DocumentIndexerService {
 //                doc.add(new StringField("path", f.getPath(), Field.Store.YES));
                 doc.add(new StringField("filename", f.getOriginalFilename(), Field.Store.YES));
                 doc.add(new StringField("url", fileUrl, Field.Store.YES));
+                doc.add(new StringField("title", title, Field.Store.YES));
 
                 indexWriter.addDocument(doc);
                 logger.info("Added doc: " + f);
