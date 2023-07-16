@@ -14,6 +14,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.FSDirectory;
+import com.example.lucene.service.CustomSimilarity;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -79,7 +80,9 @@ public class TextFileIndexer {
         // Now search
         //=========================================================
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexLocation).toPath()));
+        CustomSimilarity customSimilarity = new CustomSimilarity();
         IndexSearcher searcher = new IndexSearcher(reader);
+        searcher.setSimilarity(customSimilarity);
         TopScoreDocCollector collector = TopScoreDocCollector.create(5, 20);
 
         s = "";

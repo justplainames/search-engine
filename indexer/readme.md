@@ -1,6 +1,6 @@
 # How to run 
 
-Go to lucene dir where the `pom.xml` is located
+Go to `lucene` dir where the `pom.xml` is located
 
 ```
 mvn spring-boot:run

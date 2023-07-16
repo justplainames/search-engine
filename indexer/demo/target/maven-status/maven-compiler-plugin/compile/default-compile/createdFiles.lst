@@ -1,4 +1,2 @@
+com\example\lucene\service\CustomSimilarity.class
 TextFileIndexer.class
-PACKAGE_NAME/LuceneApplication.class
-PACKAGE_NAME/DocumentController.class
-PACKAGE_NAME/DocumentIndexer.class
