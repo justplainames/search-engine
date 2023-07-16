@@ -12,6 +12,7 @@ import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
+import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -62,7 +63,10 @@ public class DocumentIndexerService {
         TopScoreDocCollector collector = TopScoreDocCollector.create(5,20);
         Map<String, String> keyValueMap = new HashMap<>();
         List< Map<String, String>> keyValueList = new ArrayList<>();
-        Query q = new QueryParser("contents", analyzer).parse(query);
+        // queryEscape prevents user from getting a lexical error if search with weird symbols
+        String queryEscape = QueryParserUtil.escape(query);
+        Query q = new QueryParser("contents", analyzer).parse(queryEscape);
+//        Query q = new QueryParser(new QueryParser().escape(query));
 
         searcher.search(q, collector);
 
