@@ -1,32 +1,27 @@
 package com.example.lucene.service;
 
+import com.example.lucene.synonyms.ExpansionTerms;
 import com.google.gson.*;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
-import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.index.IndexWriterConfig;
+import org.apache.lucene.index.*;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
 import org.apache.lucene.queryparser.flexible.standard.QueryParserUtil;
-import org.apache.lucene.search.IndexSearcher;
-import org.apache.lucene.search.Query;
-import org.apache.lucene.search.ScoreDoc;
-import org.apache.lucene.search.TopScoreDocCollector;
+import org.apache.lucene.search.*;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 
@@ -42,6 +37,11 @@ public class DocumentIndexerService {
     // The index directory needs to be set to allow indexing and retrieval of documents
     private static String indexDir = "/tmp/index";
 
+    ExpansionTerms expansionTerms = new ExpansionTerms();
+
+    // create a class computer hashmap
+
+    //
 
     public DocumentIndexerService() throws IOException {
         FSDirectory dir = FSDirectory.open(new File(indexDir).toPath());
@@ -51,6 +51,10 @@ public class DocumentIndexerService {
     }
 
     public List<Map<String, String>> queryDocument(String query) throws IOException, ParseException {
+        // check what is inside query
+        // map the query to the expansion term
+        // check if term inside expansion term
+        // return the synonym
 
         // index writer needs to be closed after the indexing
         closeIndexWriter();
@@ -61,23 +65,40 @@ public class DocumentIndexerService {
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexDir).toPath()));
         IndexSearcher searcher = new IndexSearcher(reader);
         TopScoreDocCollector collector = TopScoreDocCollector.create(5,20);
-        Map<String, String> keyValueMap = new HashMap<>();
-        List< Map<String, String>> keyValueList = new ArrayList<>();
+
+        List<Map<String, String>> keyValueList = new ArrayList<>();
         // queryEscape prevents user from getting a lexical error if search with weird symbols
         String queryEscape = QueryParserUtil.escape(query);
+
         Query q = new QueryParser("contents", analyzer).parse(queryEscape);
+        // user search for computer
+        // the next search, they search 'science' or 'engineering'
+        // what if a new search is 'books'
+//        QueryExpansionTerms addQueryTerms = new QueryExpansionTerms("computers", List.of("science", "engineering"));
+        Map<String, String[]> map = expansionTerms.getExpansionTerms();
+//        System.out.println(map);
+        // return expansionTerms based on the q
+//        logger.info("addQueryTerms:" + addQueryTerms);
+        String[] expansionTerms = map.get(query);
+//        List<String> expansionTerms = QueryExpansionTerms.getQueryExpansionTerms(String.valueOf(q));
+        logger.info("expansionTerms:" + expansionTerms);
+        // perform query expansion
+        Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
+        logger.info("expandedQuery:" + expandedQuery);
+
 //        Query q = new QueryParser(new QueryParser().escape(query));
 
-        searcher.search(q, collector);
+        searcher.search(expandedQuery, collector);
 
         ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
         logger.info("Found" + hits.length + "hits.");
-
         for(int i = 0 ; i < hits.length ; ++i ){
+            Map<String, String> keyValueMap = new HashMap<>();
             int docId = hits[i].doc;
             Document d = searcher.doc(docId);
             keyValueMap.put("index", String.valueOf(i+1));
+            System.out.println(d.get("title"));
             keyValueMap.put("url", d.get("url"));
             keyValueMap.put("title", d.get("title"));
             keyValueMap.put("score", String.valueOf(hits[i].score));
@@ -154,6 +175,39 @@ public class DocumentIndexerService {
 
     public void closeIndexWriter() throws IOException {
         indexWriter.close();
+    }
+    private static Query expandQuery(Query query, Analyzer analyzer, String[] expansionTerms) throws IOException, ParseException {
+        Query expandedQuery = query;
+
+        // process what to take
+
+
+        // Create a BooleanQuery to combine the original query and expanded terms
+        BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
+        queryBuilder.add(query, BooleanClause.Occur.MUST);
+
+        // Expand the query terms
+        for (String term : expansionTerms) {
+            TokenStream tokenStream = analyzer.tokenStream("contents", new StringReader(term));
+            CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
+            tokenStream.reset();
+
+            while (tokenStream.incrementToken()) {
+                String expandedTerm = charTermAttribute.toString();
+
+                // Create a TermQuery for each expanded term
+                Query termQuery = new TermQuery(new Term("contents", expandedTerm));
+                queryBuilder.add(termQuery, BooleanClause.Occur.SHOULD);
+            }
+
+            tokenStream.end();
+            tokenStream.close();
+        }
+
+        // Build the final expanded query
+        expandedQuery = queryBuilder.build();
+
+        return expandedQuery;
     }
 
     public Directory getIndexDirectory() {
