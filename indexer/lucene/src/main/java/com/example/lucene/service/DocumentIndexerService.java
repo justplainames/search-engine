@@ -67,26 +67,18 @@ public class DocumentIndexerService {
         TopScoreDocCollector collector = TopScoreDocCollector.create(5,20);
 
         List<Map<String, String>> keyValueList = new ArrayList<>();
+
         // queryEscape prevents user from getting a lexical error if search with weird symbols
         String queryEscape = QueryParserUtil.escape(query);
 
         Query q = new QueryParser("contents", analyzer).parse(queryEscape);
-        // user search for computer
-        // the next search, they search 'science' or 'engineering'
-        // what if a new search is 'books'
-//        QueryExpansionTerms addQueryTerms = new QueryExpansionTerms("computers", List.of("science", "engineering"));
-        Map<String, String[]> map = expansionTerms.getExpansionTerms();
-//        System.out.println(map);
-        // return expansionTerms based on the q
-//        logger.info("addQueryTerms:" + addQueryTerms);
-        String[] expansionTerms = map.get(query);
-//        List<String> expansionTerms = QueryExpansionTerms.getQueryExpansionTerms(String.valueOf(q));
-        logger.info("expansionTerms:" + expansionTerms);
-        // perform query expansion
-        Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
-        logger.info("expandedQuery:" + expandedQuery);
 
-//        Query q = new QueryParser(new QueryParser().escape(query));
+        Map<String, String[]> map = expansionTerms.getExpansionTerms();
+
+        // return expansionTerms based on the query
+        String[] expansionTerms = map.get(query);
+        // perform query expansion based on expansion term
+        Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
 
         searcher.search(expandedQuery, collector);
 
@@ -98,7 +90,6 @@ public class DocumentIndexerService {
             int docId = hits[i].doc;
             Document d = searcher.doc(docId);
             keyValueMap.put("index", String.valueOf(i+1));
-            System.out.println(d.get("title"));
             keyValueMap.put("url", d.get("url"));
             keyValueMap.put("title", d.get("title"));
             keyValueMap.put("score", String.valueOf(hits[i].score));
