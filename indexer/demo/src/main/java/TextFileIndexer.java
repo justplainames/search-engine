@@ -157,8 +157,10 @@ public class TextFileIndexer {
 //                System.out.println("what is json element: " + jsonElement);
                 String content = jsonElement.getAsJsonObject().get("text").getAsString();
                 String fileUrl = jsonElement.getAsJsonObject().get("url").getAsString();
+                String title = jsonElement.getAsJsonObject().get("title").getAsString();
 
                 doc.add(new TextField("contents", content, Field.Store.YES));
+                doc.add(new TextField("title", title, Field.Store.YES));
                 doc.add(new StringField("path", f.getPath(), Field.Store.YES));
                 doc.add(new StringField("filename", f.getName(), Field.Store.YES));
                 doc.add(new StringField("url", fileUrl, Field.Store.YES));
