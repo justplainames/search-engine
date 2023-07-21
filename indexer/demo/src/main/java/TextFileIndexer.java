@@ -1,5 +1,7 @@
+
 import com.google.gson.JsonElement;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.en.EnglishAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StringField;
@@ -14,7 +16,21 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopScoreDocCollector;
 import org.apache.lucene.store.FSDirectory;
-import com.example.lucene.service.CustomSimilarity;
+import org.apache.lucene.search.similarities.BM25Similarity;
+import org.apache.lucene.search.similarities.Similarity;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
+import org.apache.lucene.search.similarities.TFIDFSimilarity;
+import org.apache.lucene.search.Explanation;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.queryparser.classic.ParseException;
+import org.apache.lucene.search.BooleanClause;
+import org.apache.lucene.search.BooleanQuery;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
+
 
 import java.io.*;
 import java.util.ArrayList;
@@ -22,19 +38,39 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.util.HashMap;
+import java.util.Map;
+import java.io.IOException;
+import java.nio.file.Paths;
 
 /**
  * This terminal application creates an Apache Lucene index in a folder and adds files into this index
  * based on the input of the user.
  */
 public class TextFileIndexer {
-    private static StandardAnalyzer analyzer = new StandardAnalyzer();
+    private static EnglishAnalyzer analyzer = new EnglishAnalyzer();
 
     private IndexWriter writer;
     private List<File> queue = new ArrayList();
 
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException {  
+        String[] expansionTerms = {
+            "personal",
+            "technology",
+            "machine",
+            "systems",
+            "information",
+            "development",
+            "electronic",
+            "device",
+            "machine",
+            "hardware",
+            "data",
+            "digital",
+            "science"
+        };
+
         System.out.println("Enter the path where the index will be created: (e.g. /tmp/index or c:\\temp\\index)");
 
         String indexLocation = null;
@@ -50,6 +86,8 @@ public class TextFileIndexer {
             System.out.println("Cannot create index..." + ex.getMessage());
             System.exit(-1);
         }
+
+        
 
         //===================================================
         //read input from user until he enters q for quit
@@ -80,10 +118,14 @@ public class TextFileIndexer {
         // Now search
         //=========================================================
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexLocation).toPath()));
-        CustomSimilarity customSimilarity = new CustomSimilarity();
         IndexSearcher searcher = new IndexSearcher(reader);
-        searcher.setSimilarity(customSimilarity);
-        TopScoreDocCollector collector = TopScoreDocCollector.create(5, 20);
+        searcher.setSimilarity(new BM25Similarity(1.25f, 1f));
+
+        Map<String, Float> boosts = new HashMap<>();
+        boosts.put("title", 2.0f); // Boost for title field
+        boosts.put("url", 1.5f);
+
+        TopScoreDocCollector collector = TopScoreDocCollector.create(10, 20);
 
         s = "";
         while (!s.equalsIgnoreCase("q")) {
@@ -93,17 +135,53 @@ public class TextFileIndexer {
                 if (s.equalsIgnoreCase("q")) {
                     break;
                 }
-                Query q = new QueryParser("contents", analyzer).parse(s);
-                searcher.search(q, collector);
+
+                //=========================================================
+                // Parse Default
+                //=========================================================
+                //Create parser
+                // Query query = new QueryParser("contents", analyzer).parse(s);
+
+                // // Perform query expansion
+                // Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
+
+                //=========================================================
+                // Parse Multifield
+                //=========================================================
+                // Create a MultiFieldQueryParser with boosts
+                String[] fields = {"title", "url", "contents"};
+                // MultiFieldQueryParser queryParser = new MultiFieldQueryParser(fields, analyzer);
+
+                Query query = new MultiFieldQueryParser(fields, analyzer, Map.of("title", 1f, "contents", 1f))
+                    .parse(s);
+                
+
+                // Perform query expansion
+                Query expandedQuery = expandQuery(query, analyzer, expansionTerms);
+                
+
+              
+                searcher.search(expandedQuery, collector);
                 ScoreDoc[] hits = collector.topDocs().scoreDocs;
+
+
+        
+
+                // QueryParser parser = new QueryParser("contents", analyzer);
+                // Query query = parser.parse(s);
 
                 // 4. display results
                 System.out.println("Found " + hits.length + " hits.");
                 for(int i=0;i<hits.length;++i) {
                     int docId = hits[i].doc;
                     Document d = searcher.doc(docId);
+                    Explanation explanation = searcher.explain(query, docId);
+
                     System.out.println((i + 1) + ". " + d.get("url") + " score=" + hits[i].score);
-                }
+                    // Print the explanation
+                    System.out.println("Explanation: " + explanation.toString());
+                    // System.out.println();
+                    }
 
             } catch (Exception e) {
                 System.out.println("Error searching " + s + " : " + e.getMessage());
@@ -154,7 +232,7 @@ public class TextFileIndexer {
 
                 // accessing the 'text' key in fileReader
                 JsonElement jsonElement = JsonParser.parseReader(fr);
-//                System.out.println("what is json element: " + jsonElement);
+                // System.out.println("what is json element: " + jsonElement);
                 String content = jsonElement.getAsJsonObject().get("text").getAsString();
                 String fileUrl = jsonElement.getAsJsonObject().get("url").getAsString();
                 String title = jsonElement.getAsJsonObject().get("title").getAsString();
@@ -243,4 +321,40 @@ public class TextFileIndexer {
     public void closeIndex() throws IOException {
         writer.close();
     }
+
+
+    private static Query expandQuery(Query query, Analyzer analyzer, String[] expansionTerms) throws IOException, ParseException {
+        Query expandedQuery = query;
+
+        // process what to take
+
+
+        // Create a BooleanQuery to combine the original query and expanded terms
+        BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
+        queryBuilder.add(query, BooleanClause.Occur.MUST);
+
+        // Expand the query terms
+        for (String term : expansionTerms) {
+            TokenStream tokenStream = analyzer.tokenStream("contents", new StringReader(term));
+            CharTermAttribute charTermAttribute = tokenStream.addAttribute(CharTermAttribute.class);
+            tokenStream.reset();
+
+            while (tokenStream.incrementToken()) {
+                String expandedTerm = charTermAttribute.toString();
+
+                // Create a TermQuery for each expanded term
+                Query termQuery = new TermQuery(new Term("contents", expandedTerm));
+                queryBuilder.add(termQuery, BooleanClause.Occur.SHOULD);
+            }
+
+            tokenStream.end();
+            tokenStream.close();
+        }
+
+        // Build the final expanded query
+        expandedQuery = queryBuilder.build();
+
+        return expandedQuery;
+    }
 }
+
