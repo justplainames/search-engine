@@ -61,7 +61,7 @@ public class DocumentController {
     @GetMapping("/query")
     public List<Map<String, String>> queryDocument(@RequestParam(value = "query") String query) throws IOException, ParseException {
         List<Map<String, String>> response = documentIndexerService.queryDocument(query);
-        System.out.println("response:" + response);
+//        System.out.println("response:" + response);
         return response;
     }
 

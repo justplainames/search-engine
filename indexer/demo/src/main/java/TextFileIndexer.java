@@ -176,7 +176,7 @@ public class TextFileIndexer {
                     int docId = hits[i].doc;
                     Document d = searcher.doc(docId);
                     Explanation explanation = searcher.explain(query, docId);
-
+                    System.out.println("what is d"+ d);
                     System.out.println((i + 1) + ". " + d.get("url") + " score=" + hits[i].score);
                     // Print the explanation
                     System.out.println("Explanation: " + explanation.toString());

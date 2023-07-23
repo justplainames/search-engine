@@ -37,11 +37,10 @@ public class DocumentIndexerService {
     // The index directory needs to be set to allow indexing and retrieval of documents
     private static String indexDir = "/tmp/index";
 
+    // key value list to store the return results
+    private static List<Map<String, String>> keyValueList = new ArrayList<>();
+
     ExpansionTerms expansionTerms = new ExpansionTerms();
-
-    // create a class computer hashmap
-
-    //
 
     public DocumentIndexerService() throws IOException {
         FSDirectory dir = FSDirectory.open(new File(indexDir).toPath());
@@ -51,11 +50,6 @@ public class DocumentIndexerService {
     }
 
     public List<Map<String, String>> queryDocument(String query) throws IOException, ParseException {
-        // check what is inside query
-        // map the query to the expansion term
-        // check if term inside expansion term
-        // return the synonym
-
         // index writer needs to be closed after the indexing
         closeIndexWriter();
 
@@ -64,9 +58,13 @@ public class DocumentIndexerService {
         //===================================================
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexDir).toPath()));
         IndexSearcher searcher = new IndexSearcher(reader);
-        TopScoreDocCollector collector = TopScoreDocCollector.create(5,20);
+        TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
 
-        List<Map<String, String>> keyValueList = new ArrayList<>();
+        // check what is inside query
+        // map the query to the expansion term
+        // check if term inside expansion term
+        // return the synonym
+
 
         // queryEscape prevents user from getting a lexical error if search with weird symbols
         String queryEscape = QueryParserUtil.escape(query);
@@ -91,6 +89,7 @@ public class DocumentIndexerService {
             Document d = searcher.doc(docId);
             keyValueMap.put("index", String.valueOf(i+1));
             keyValueMap.put("url", d.get("url"));
+            keyValueMap.put("content", d.get("content"));
             keyValueMap.put("title", d.get("title"));
             keyValueMap.put("score", String.valueOf(hits[i].score));
             keyValueList.add(keyValueMap);
