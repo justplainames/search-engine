@@ -4,7 +4,7 @@ import com.example.lucene.synonyms.ExpansionTerms;
 import com.google.gson.*;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.standard.EnglishAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 public class DocumentIndexerService {
     private Directory indexDirectory;
     private IndexWriter indexWriter;
-    private static StandardAnalyzer analyzer = new StandardAnalyzer();
+    private static EnglishAnalyzer analyzer = new EnglishAnalyzer();
 
     private List<MultipartFile> queue = new ArrayList();
     private final static Logger logger = Logger.getLogger("DocumentIndexer");
@@ -69,7 +69,18 @@ public class DocumentIndexerService {
         // queryEscape prevents user from getting a lexical error if search with weird symbols
         String queryEscape = QueryParserUtil.escape(query);
 
-        Query q = new QueryParser("contents", analyzer).parse(queryEscape);
+        // Query q = new QueryParser("contents", analyzer).parse(queryEscape);
+
+
+        // Create a MultiFieldQueryParser with boosts
+        String[] fields = {"title", "contents", "abstract", "description", "keywords"};
+        Query q = new MultiFieldQueryParser(fields, analyzer, Map.of(
+            "title", 0.3f,
+            "contents", 1f,
+            "abstract", 1f,
+            "description", 1f, 
+            "keywords", 1f))
+            .parse(s);
 
         Map<String, String[]> map = expansionTerms.getExpansionTerms();
 
@@ -116,15 +127,22 @@ public class DocumentIndexerService {
                 String content = jsonElement.getAsJsonObject().get("text").getAsString();
                 String fileUrl = jsonElement.getAsJsonObject().get("url").getAsString();
                 String title = jsonElement.getAsJsonObject().get("title").getAsString();
+                String abstract_ = jsonElement.getAsJsonObject().get("meta_abstract").getAsString();
+                String keywords = jsonElement.getAsJsonObject().get("meta_keywords").getAsString();
+                String description = jsonElement.getAsJsonObject().get("meta_description").getAsString();
 
 //                logger.info("content:" +  content);
 //                logger.info("fileUrl:" +  fileUrl);
 
                 doc.add(new TextField("contents", content, Field.Store.YES));
-//                doc.add(new StringField("path", f.getPath(), Field.Store.YES));
-                doc.add(new StringField("filename", f.getOriginalFilename(), Field.Store.YES));
+                doc.add(new TextField("title", title, Field.Store.YES));
+                doc.add(new TextField("abstract", abstract_, Field.Store.YES));
+                doc.add(new TextField("keywords", keywords, Field.Store.YES));
+                doc.add(new TextField("description", description, Field.Store.YES));
+                doc.add(new StringField("path", f.getPath(), Field.Store.YES));
+                doc.add(new StringField("filename", f.getName(), Field.Store.YES));
                 doc.add(new StringField("url", fileUrl, Field.Store.YES));
-                doc.add(new StringField("title", title, Field.Store.YES));
+
 
                 indexWriter.addDocument(doc);
                 logger.info("Added doc: " + f);
