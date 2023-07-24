@@ -1,9 +1,9 @@
 <template>
   <div class="search-results-section">
-    <div class="search-results-container">
+    <div class="search-bar-container">
       <form @submit.prevent="onSubmit" class="form">
         <div class="form-content">
-          <h1>GOGGLE</h1>
+          <h1><router-link to="/">GOGGLE</router-link></h1>
           <input
             type="text"
             id="searchQuery"
@@ -21,33 +21,42 @@
     </div>
     <hr />
     <div class="search-results-container">
+      <p class="sub-text results-amount">About 500 results</p>
+      <div class="loading-results" v-if="!loaded">
+        <my-spinner />
+        <p>We are getting your results!</p>
+      </div>
       <div
         v-for="(result, index) in searchResult"
         :key="index"
         class="results-wrapper"
+        @click="redirectToLink(result.url)"
       >
-        <h2>{{ result.title }}</h2>
+        <h2 class="results-title">{{ result.title }}</h2>
         <p>{{ result.description }}</p>
+        <hr />
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import MySpinner from "../components/MySpinner.vue";
 import ky from "ky";
 export default {
+  components: { MySpinner },
   data() {
     return {
       searchResult: [],
       searchQuery: "",
+      loaded: false,
     };
   },
   methods: {
     searchClicked() {
       console.log("search clicked");
     },
-    search(query) {
-      console.log(query);
+    search() {
       this.searchResult = [
         {
           title: "This is a good title",
@@ -85,29 +94,28 @@ export default {
           description:
             "This is the description of this website. it is a good website as it contains many information about things and other things",
         },
+        {
+          title: "This is a good title",
+          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
+          description:
+            "This is the description of this website. it is a good website as it contains many information about things and other things",
+        },
+        {
+          title: "This is a good title",
+          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
+          description:
+            "This is the description of this website. it is a good website as it contains many information about things and other things",
+        },
       ];
+      this.loaded = true;
     },
-    httpRequest(success, error) {
-      const http = new XMLHttpRequest();
-      const params = "url=" + this.url;
-      http.open("POST", this.apiUrl, true);
-      http.setRequestHeader(
-        "Content-type",
-        "application/x-www-form-urlencoded"
-      );
-      http.onreadystatechange = function () {
-        if (http.readyState === 4 && http.status === 200) {
-          success(http.responseText);
-        }
-        if (http.readyState === 4 && http.status === 500) {
-          error();
-        }
-      };
-      http.send(params);
+    redirectToLink(url) {
+      window.open(url, "_blank");
     },
   },
   mounted() {
-    this.search(this.$route.params.query);
+    this.searchQuery = this.$route.params.query;
+    this.search();
     const res = ky
       .get(
         "https://jsonlink.io/api/extract?url=https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
@@ -125,25 +133,60 @@ export default {
 
 <style lang="scss" scoped>
 .search-results-section {
-  min-height: Calc(100vh - 100px);
-  width: Calc(100vw - 100px);
+  min-height: 100vh;
+  height: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 50px;
+}
+.search-bar-container {
+  max-width: 1400px;
 }
 .search-results-container {
   max-width: 1400px;
+  padding: 10px 50px 050px 50px;
 }
 .results-wrapper {
   text-align: left;
-  margin-bottom: 35px;
+  padding-top: 20px;
   h2 {
     margin-bottom: 0;
   }
   p {
     margin-top: 10px;
   }
+  &:hover {
+    background-color: rgb(247, 247, 247);
+  }
+}
+.results-title {
+  cursor: pointer;
+  position: relative;
+  width: max-content;
+  color: #0645ad;
+  &::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    transform: scaleX(0);
+    height: 2px;
+    bottom: 0;
+    left: 0;
+    background-color: #0861f0;
+    transform-origin: bottom right;
+    transition: transform 0.25s ease-out;
+  }
+  &:hover::after {
+    transform: scaleX(1);
+    transform-origin: bottom left;
+  }
+  &:hover {
+    color: #0861f0;
+  }
+  // &:hover{
+  //   text-decoration: underline;
+  // }
 }
 .form {
   width: 100%;
@@ -172,5 +215,26 @@ export default {
   border: 1px solid black;
   padding: 10px;
   margin-left: 20px;
+}
+hr {
+  border: 0;
+  clear: both;
+  display: block;
+  width: 100%;
+  background-color: #5e5e5e;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+}
+.router-link,
+.router-link-active {
+  text-decoration: none;
+  color: black;
+}
+.results-amount {
+  text-align: left;
+}
+.sub-text {
+  color: rgb(71, 71, 71);
 }
 </style>
