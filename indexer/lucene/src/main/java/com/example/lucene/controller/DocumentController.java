@@ -7,8 +7,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -65,11 +69,27 @@ public class DocumentController {
         return response;
     }
 
-    @GetMapping("/urlQuery")
+    @PostMapping("/urlQuery")
 //    public List<Map<String, String>> urlQueryDocuement(@RequestParam(value = "url") String[] urls) throws IOException, ParseException {
-        public List<Map<String, String>> urlQueryDocuement() throws IOException, ParseException {
-//        List<Map<String, String>> response = documentIndexerService.urlQuerySelector(urls);
-        List<Map<String, String>> response = documentIndexerService.urlQuerySelector();
+        public List<Map<String, String>> urlQueryDocuement(@RequestBody RequestData requestData) throws IOException, ParseException {
+    //        List<Map<String, String>> response = documentIndexerService.urlQuerySelector(urls);
+        List<InnerDocument> searchResultItems = requestData.getSearchResult();
+        List<String> urls = new ArrayList<>();
+
+//        Map<String, InnerDocument[]> urls = requestData.getData();
+        logger.info("urls: " + searchResultItems);
+
+        for (InnerDocument item : searchResultItems) {
+            String url = item.getUrl();
+            // Process each item in the list here
+//            System.out.println("Title: " + item.getTitle());
+//            System.out.println("URL: " + item.getUrl());
+//            System.out.println("Description: " + item.getDescription());
+//            System.out.println("--------");
+            urls.add(url);
+        }
+
+        List<Map<String, String>> response = documentIndexerService.urlQuerySelector(urls);
         return response;
     }
 

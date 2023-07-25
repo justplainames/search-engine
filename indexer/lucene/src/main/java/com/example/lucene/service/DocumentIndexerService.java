@@ -52,9 +52,8 @@ public class DocumentIndexerService {
         indexWriter = new IndexWriter(dir, writerConfig);
 
     }
-
-//    public List<Map<String, String>> urlQuerySelector(String[] urls) throws IOException, ParseException {
-        public List<Map<String, String>> urlQuerySelector() throws IOException, ParseException {
+    public List<Map<String, String>> urlQuerySelector(List<String> urls) throws IOException, ParseException {
+//        public List<Map<String, String>> urlQuerySelector() throws IOException, ParseException {
         closeIndexWriter();
 //        logger.info(String.valueOf(urls));
         String[] fields = {"title","url", "contents", "abstract", "description", "keywords"};; // Fields to search
@@ -81,7 +80,7 @@ public class DocumentIndexerService {
             MultiFieldQueryParser queryParser = new MultiFieldQueryParser(fields, analyzer);
             // Create individual queries for each URL
             BooleanQuery.Builder urlQueryBuilder = new BooleanQuery.Builder();
-            for (String url : urlsToRetrieve) {
+            for (String url : urls) {
                 Query urlQuery = queryParser.parse(QueryParser.escape(url));
                 urlQueryBuilder.add(urlQuery, BooleanClause.Occur.SHOULD);
             }
