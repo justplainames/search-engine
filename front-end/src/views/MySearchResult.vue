@@ -75,9 +75,10 @@ export default {
       window.open(url, "_blank");
     },
     async sendFeedback() {
+      var payload = this.searchFeedback.map((obj) => obj.url);
       const res = await this.$http
         .post("urlQuery/", {
-          json: {},
+          json: payload,
         })
         .json();
       if (res.error) {
