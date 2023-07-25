@@ -24,21 +24,9 @@
       </form>
     </div>
     <hr />
-    <div class="search-results-container">
-      <div class="loading-results" v-if="!loaded">
-        <my-spinner />
-        <p>We are getting your results!</p>
-      </div>
-      <div
-        v-for="(result, index) in searchResult"
-        :key="index"
-        class="results-wrapper"
-        @click="redirectToLink(result.url)"
-      >
-        <h2 class="results-title">{{ result.title }}</h2>
-        <p>{{ result.description }}</p>
-        <hr />
-      </div>
+    <div class="spinner-wrapper">
+      <my-spinner />
+      <p>We are getting your results!</p>
     </div>
   </div>
 </template>
@@ -47,52 +35,6 @@
 import MySpinner from "../components/MySpinner.vue";
 export default {
   components: { MySpinner },
-  data() {
-    return {
-      searchResult: [],
-      searchQuery: "",
-      searchFeedback: [],
-      loaded: false,
-      totalPages: 10,
-      currentPage: 1,
-    };
-  },
-  methods: {
-    selectedPage(page) {
-      this.currentPage = page;
-    },
-    searchClicked() {
-      if (this.searchQuery != null) {
-        this.$router.push({
-          name: "Feedback",
-          params: { query: this.searchQuery },
-        });
-      }
-    },
-
-    redirectToLink(url) {
-      window.open(url, "_blank");
-    },
-    async sendFeedback() {
-      var payload = this.searchFeedback.map((obj) => obj.url);
-      const res = await this.$http
-        .post("urlQuery/", {
-          json: payload,
-        })
-        .json();
-      if (res.error) {
-        console.log(res.error);
-      } else {
-        this.searchResult = res;
-      }
-      this.loaded = true;
-    },
-  },
-  mounted() {
-    this.searchQuery = this.$route.params.query;
-    this.searchFeedback = this.$route.params.feedback;
-    this.sendFeedback();
-  },
 };
 </script>
 
@@ -107,7 +49,7 @@ export default {
 }
 .search-bar-container {
   max-width: 1400px;
-  height: 200px;
+  height: 100px;
   margin-top: 20px;
 }
 .search-results-container {
@@ -206,5 +148,8 @@ hr {
 }
 .search-logo {
   height: 50px;
+}
+.spinner-wrapper {
+  margin-top: 100px;
 }
 </style>

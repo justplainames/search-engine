@@ -120,7 +120,7 @@ export default {
 .search-results-container {
   max-width: 1400px;
   height: 100%;
-  overflow-y: scroll;
+  margin-bottom: 100px;
   padding: 10px 50px 050px 50px;
 }
 .results-wrapper {
@@ -225,6 +225,8 @@ hr {
   }
 }
 .button-container {
+  position: sticky;
+  bottom: 10px;
   padding: 50px;
   button {
     cursor: pointer;
