@@ -25,7 +25,6 @@
     </div>
     <hr />
     <div class="search-results-container">
-      <p class="sub-text results-amount">About 500 results</p>
       <div class="loading-results" v-if="!loaded">
         <my-spinner />
         <p>We are getting your results!</p>
