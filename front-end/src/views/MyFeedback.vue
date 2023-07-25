@@ -25,7 +25,7 @@
     </div>
     <hr />
     <div class="search-results-container">
-      <p class="sub-text results-amount">About 500 results</p>
+      <h2>Please tell us which links are useful</h2>
       <div class="loading-results" v-if="!loaded">
         <my-spinner />
         <p>We are getting your results!</p>
@@ -34,57 +34,53 @@
         v-for="(result, index) in searchResult"
         :key="index"
         class="results-wrapper"
-        @click="redirectToLink(result.url)"
       >
-        <h2 class="results-title">{{ result.title }}</h2>
-        <p>{{ result.description }}</p>
-        <hr />
+        <label class="checkbox-container">
+          <input type="checkbox" @change="checkboxClicked($event, index)" />
+          <span class="checkmark"></span>
+        </label>
+        <div @click="redirectToLink(result.url)">
+          <h2 class="results-title">{{ result.title }}</h2>
+          <p>{{ result.description }}</p>
+          <hr />
+        </div>
       </div>
-      <my-pagination
-        :pages="totalPages"
-        :currentPage="currentPage"
-        @selectedPage="selectedPage"
-        @nextPage="
-          () => {
-            this.currentPage += 1;
-          }
-        "
-        @previousPage="
-          () => {
-            this.currentPage -= 1;
-          }
-        "
-      />
+    </div>
+    <div class="button-container">
+      <button @click="submitFeedback()">Submit Feedback</button>
     </div>
   </div>
 </template>
 
 <script>
 import MySpinner from "../components/MySpinner.vue";
-import MyPagination from "../components/MyPagination.vue";
 export default {
-  components: { MySpinner, MyPagination },
+  components: { MySpinner },
   data() {
     return {
       searchResult: [],
       searchQuery: "",
-      searchFeedback: [],
       loaded: false,
       totalPages: 10,
       currentPage: 1,
+      feedback: true,
     };
   },
   methods: {
+    submitFeedback() {
+      this.$router.push({
+        name: "Search Result",
+        params: { query: this.searchQuery, feedback: this.searchResult },
+      });
+    },
+    checkboxClicked(event, index) {
+      this.searchResult[index]["checked"] = event.target.checked;
+    },
     selectedPage(page) {
       this.currentPage = page;
     },
     searchClicked() {
-      if (this.searchQuery != null) {
-        this.$router.push({
-          name: "Feedback",
-          params: { query: this.searchQuery },
-        });
-      }
+      console.log("search clicked");
     },
     search() {
       this.searchResult = [
@@ -145,16 +141,19 @@ export default {
   },
   mounted() {
     this.searchQuery = this.$route.params.query;
-    this.searchFeedback = this.$route.params.feedback;
     this.search();
+    // const res = await this.$http.get(
+    //     "feedback",{
+
+    //     }
+    // )
   },
 };
 </script>
 
 <style lang="scss" scoped>
 .search-results-section {
-  min-height: 100vh;
-  height: 100%;
+  height: 100vh;
   width: 100%;
   display: flex;
   flex-direction: column;
@@ -167,11 +166,16 @@ export default {
 }
 .search-results-container {
   max-width: 1400px;
+  height: 100%;
+  overflow-y: scroll;
   padding: 10px 50px 050px 50px;
 }
 .results-wrapper {
   text-align: left;
   padding-top: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   h2 {
     margin-bottom: 0;
   }
@@ -258,6 +262,27 @@ hr {
 }
 .sub-text {
   color: rgb(71, 71, 71);
+}
+.checkbox-container {
+  margin-right: 20px;
+
+  input {
+    height: 20px;
+    width: 20px;
+  }
+}
+.button-container {
+  padding: 50px;
+  button {
+    cursor: pointer;
+    border-radius: 5px;
+    padding: 10px 20px;
+    border: none;
+    &:hover {
+      background-color: rgb(172, 172, 172);
+      color: white;
+    }
+  }
 }
 .search-logo {
   height: 50px;

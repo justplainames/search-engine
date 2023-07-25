@@ -1,8 +1,8 @@
 <template>
   <div class="section">
-    <h1>GOGGLE</h1>
     <form @submit.prevent="onSubmit" class="form">
       <div class="form-content">
+        <img src="@/assets/goggle-text-stacked.png" class="logo-img" />
         <input
           type="text"
           id="searchQuery"
@@ -25,7 +25,7 @@ export default {
     onSubmit() {
       if (this.searchQuery) {
         this.$router.push({
-          name: "Search Result",
+          name: "Feedback",
           params: { query: this.searchQuery },
         });
       }
@@ -74,5 +74,8 @@ export default {
   border-radius: 20px;
   border: 1px solid black;
   padding: 10px;
+}
+.logo-img {
+  height: 250px;
 }
 </style>
