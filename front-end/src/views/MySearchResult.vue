@@ -79,7 +79,7 @@ export default {
         .map((obj) => obj.url);
       const res = await this.$http
         .post("urlQuery/", {
-          json: payload,
+          json: { searchResult: payload },
         })
         .json();
       if (res.error) {
