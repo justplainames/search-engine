@@ -53,8 +53,8 @@ public class DocumentIndexerService {
 
     }
     public List<Map<String, String>> urlQuerySelector(List<String> urls) throws IOException, ParseException {
-//        public List<Map<String, String>> urlQuerySelector() throws IOException, ParseException {
         closeIndexWriter();
+        List<Map<String, String>> urlValueList = new ArrayList<>();
 //        logger.info(String.valueOf(urls));
         String[] fields = {"title","url", "contents", "abstract", "description", "keywords"};; // Fields to search
         TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
@@ -185,6 +185,8 @@ public class DocumentIndexerService {
     public List<Map<String, String>> queryDocument(String query) throws IOException, ParseException {
         // index writer needs to be closed after the indexing
         closeIndexWriter();
+        List<Map<String, String>> keyValueList = new ArrayList<>();
+
 
         //===================================================
         // Search for files
@@ -193,17 +195,10 @@ public class DocumentIndexerService {
         IndexSearcher searcher = new IndexSearcher(reader);
         TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
 
-        // check what is inside query
-        // map the query to the expansion term
-        // check if term inside expansion term
-        // return the synonym
-
-
         // queryEscape prevents user from getting a lexical error if search with weird symbols
         String queryEscape = QueryParserUtil.escape(query);
 
         // Query q = new QueryParser("contents", analyzer).parse(queryEscape);
-
 
         // Create a MultiFieldQueryParser with boosts
         String[] fields = {"title", "contents", "abstract", "description", "keywords"};
@@ -215,30 +210,39 @@ public class DocumentIndexerService {
             "keywords", 1f))
             .parse(queryEscape);
 
-        Map<String, String[]> expansionMap = expansionTerms.getExpansionTerms();
-        logger.info("expansionMap:" + expansionMap);
-        // check if query exist in map object
-//        boolean containsKey = checkKeyExists(expansionMap, query);
+        logger.info("query: " + q);
 
-//        if(containsKey == true){
-//            logger.info("containskey:" + containsKey);
-        String[] expansionTerms = expansionMap.get(query);
-        Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
-        searcher.search(expandedQuery, collector);
-//        }
+        Map<String, String[]> expansionMap = expansionTerms.getExpansionTerms();
+//        logger.info("expansionMap:" + expansionMap);
+        // check if query exist in map object
+        boolean containsKey = checkKeyExists(expansionMap, query);
+
+        if(containsKey == true){
+            logger.info("containskey:" + containsKey);
+//            TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
+
+            String[] expansionTerms = expansionMap.get(query);
+            Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
+            searcher = new IndexSearcher(searcher.getIndexReader());
+//            collector = TopScoreDocCollector.create(10, 20);
+            searcher.search(expandedQuery, collector);
+        }
         // return expansionTerms based on the query
 //        String[] expansionTerms = expansionMap.get(query);
 //        // perform query expansion based on expansion term
 //        Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
-//        else{
-//            logger.info("containskey:" + containsKey);
-//            searcher.search(q, collector);
-//        }
+        else{
+            logger.info("containskey:" + containsKey);
+//            collector = TopScoreDocCollector.create(10, 20);
+//            TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
+            searcher.search(q, collector);
+            containsKey = false;
+        }
 //        searcher.search(queryEscape, collector);
 
         ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
-        logger.info("Found" + hits.length + "hits.");
+//        logger.info("Found" + hits.length + "hits.");
         for(int i = 0 ; i < hits.length ; ++i ){
             Map<String, String> keyValueMap = new HashMap<>();
             int docId = hits[i].doc;
