@@ -8,10 +8,10 @@ import java.util.Map;
 
 
 public class RequestData {
-    private List<InnerDocument> searchResult;
+    private List<String> searchResult;
 
     // Constructor
-    public RequestData(List<InnerDocument> searchResult) {
+    public RequestData(List<String> searchResult) {
         this.searchResult = searchResult;
     }
 
@@ -21,19 +21,19 @@ public class RequestData {
     }
 
     // Static factory method with @JsonCreator
-    @JsonCreator
-    public static RequestData createRequestData(
-            @JsonProperty("searchResult") List<InnerDocument> searchResult) {
-        return new RequestData(searchResult);
-    }
-
+//    @JsonCreator
+//    public static RequestData createRequestData(
+//            @JsonProperty("searchResult") List<InnerDocument> searchResult) {
+//        return new RequestData(searchResult);
+//    }
+//
     // Getter for searchResult
-    public List<InnerDocument> getSearchResult() {
+    public List<String> getSearchResult() {
         return searchResult;
     }
 
     // Setter for searchResult
-    public void setSearchResult(List<InnerDocument> searchResult) {
+    public void setSearchResult(List<String> searchResult) {
         this.searchResult = searchResult;
     }
 }

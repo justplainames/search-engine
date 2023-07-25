@@ -70,24 +70,16 @@ public class DocumentController {
     }
 
     @PostMapping("/urlQuery")
-//    public List<Map<String, String>> urlQueryDocuement(@RequestParam(value = "url") String[] urls) throws IOException, ParseException {
-        public List<Map<String, String>> urlQueryDocuement(@RequestBody RequestData requestData) throws IOException, ParseException {
-    //        List<Map<String, String>> response = documentIndexerService.urlQuerySelector(urls);
-        List<InnerDocument> searchResultItems = requestData.getSearchResult();
-        List<String> urls = new ArrayList<>();
+        public List<Map<String, String>> urlQuerySelector(@RequestBody RequestData requestData) throws IOException, ParseException {
 
-//        Map<String, InnerDocument[]> urls = requestData.getData();
-        logger.info("urls: " + searchResultItems);
+//        List<InnerDocument> searchResultItems = requestData.getSearchResult();
+        List<String> urls = requestData.getSearchResult();
+        logger.info("urls: " + requestData.getSearchResult());
 
-        for (InnerDocument item : searchResultItems) {
-            String url = item.getUrl();
-            // Process each item in the list here
-//            System.out.println("Title: " + item.getTitle());
-//            System.out.println("URL: " + item.getUrl());
-//            System.out.println("Description: " + item.getDescription());
-//            System.out.println("--------");
-            urls.add(url);
-        }
+//        for (InnerDocument item : searchResultItems) {
+//            String url = item.getUrl();
+//            urls.add(url);
+//        }
 
         List<Map<String, String>> response = documentIndexerService.urlQuerySelector(urls);
         return response;
