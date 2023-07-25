@@ -40,30 +40,14 @@
         <p>{{ result.description }}</p>
         <hr />
       </div>
-      <my-pagination
-        :pages="totalPages"
-        :currentPage="currentPage"
-        @selectedPage="selectedPage"
-        @nextPage="
-          () => {
-            this.currentPage += 1;
-          }
-        "
-        @previousPage="
-          () => {
-            this.currentPage -= 1;
-          }
-        "
-      />
     </div>
   </div>
 </template>
 
 <script>
 import MySpinner from "../components/MySpinner.vue";
-import MyPagination from "../components/MyPagination.vue";
 export default {
-  components: { MySpinner, MyPagination },
+  components: { MySpinner },
   data() {
     return {
       searchResult: [],
