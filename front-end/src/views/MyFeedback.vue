@@ -13,6 +13,7 @@
             id="searchQuery"
             class="input--pill"
             v-model="searchQuery"
+            @keyup.enter="searchClicked"
           />
           <img
             role="img"
@@ -39,7 +40,10 @@
           <input type="checkbox" @change="checkboxClicked($event, index)" />
           <span class="checkmark"></span>
         </label>
-        <div @click="redirectToLink(result.url)">
+        <div
+          @click="redirectToLink(result.url)"
+          class="results-content-wrapper"
+        >
           <h2 class="results-title">{{ result.title }}</h2>
           <p>{{ result.description }}</p>
           <hr />
@@ -142,6 +146,9 @@ export default {
   }
   &:hover {
     background-color: rgb(247, 247, 247);
+  }
+  .results-content-wrapper {
+    width: 100%;
   }
 }
 .results-title {

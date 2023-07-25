@@ -8,6 +8,7 @@
           id="searchQuery"
           class="input--pill"
           v-model="searchQuery"
+          @keyup.enter="onSubmit"
         />
         <button type="submit" class="button">SEARCH</button>
       </div>

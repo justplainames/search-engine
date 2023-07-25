@@ -13,6 +13,7 @@
             id="searchQuery"
             class="input--pill"
             v-model="searchQuery"
+            @keyup.enter="searchClicked"
           />
           <img
             role="img"
