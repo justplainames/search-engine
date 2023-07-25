@@ -89,7 +89,12 @@ export default {
       if (res.error) {
         console.log(res.error);
       } else {
-        this.searchResult = res;
+        this.searchResult = res.map((obj) => {
+          return {
+            ...obj,
+            checked: false,
+          };
+        });
       }
       this.loaded = true;
     },
