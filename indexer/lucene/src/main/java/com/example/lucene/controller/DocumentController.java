@@ -65,4 +65,12 @@ public class DocumentController {
         return response;
     }
 
+    @GetMapping("/urlQuery")
+//    public List<Map<String, String>> urlQueryDocuement(@RequestParam(value = "url") String[] urls) throws IOException, ParseException {
+        public List<Map<String, String>> urlQueryDocuement() throws IOException, ParseException {
+//        List<Map<String, String>> response = documentIndexerService.urlQuerySelector(urls);
+        List<Map<String, String>> response = documentIndexerService.urlQuerySelector();
+        return response;
+    }
+
 }

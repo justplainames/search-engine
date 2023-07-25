@@ -443,7 +443,8 @@ public class TextFileIndexer {
         }
 
         // Close the reader
-        reader.close();} catch (IOException | ParseException e) {
+        reader.close();
+         } catch (IOException | ParseException e) {
             e.printStackTrace();
         }
     }
