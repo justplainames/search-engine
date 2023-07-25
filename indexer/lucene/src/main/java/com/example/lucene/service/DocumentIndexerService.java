@@ -133,9 +133,9 @@ public class DocumentIndexerService {
             for (String term : topTerms) {
                 String queryEscape = QueryParserUtil.escape(term);
                 Query q = new MultiFieldQueryParser(fields, analyzer, Map.of(
-                        "title", 0.3f,
-                        "contents", 1f,
-                        "description", 1f))
+                        "title", 0.45f,
+                        "contents", 0.2f,
+                        "description", 0.35f))
                         .parse(queryEscape);
                 searcher.search(q, collector);
             }
@@ -149,7 +149,7 @@ public class DocumentIndexerService {
                 Document d = searcher.doc(docId);
                 keyValueMap.put("index", String.valueOf(i+1));
                 keyValueMap.put("url", d.get("url"));
-//            keyValueMap.put("content", d.get("contents"));
+                keyValueMap.put("description", d.get("description"));
                 keyValueMap.put("title", d.get("title"));
                 keyValueMap.put("score", String.valueOf(hits[i].score));
                 urlValueList.add(keyValueMap);
@@ -174,12 +174,6 @@ public class DocumentIndexerService {
         IndexSearcher searcher = new IndexSearcher(reader);
         TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
 
-        // check what is inside query
-        // map the query to the expansion term
-        // check if term inside expansion term
-        // return the synonym
-
-
         // queryEscape prevents user from getting a lexical error if search with weird symbols
         String queryEscape = QueryParserUtil.escape(query);
 
@@ -189,9 +183,9 @@ public class DocumentIndexerService {
         // Create a MultiFieldQueryParser with boosts
         String[] fields = {"title", "contents", "abstract", "description", "keywords"};
         Query q = new MultiFieldQueryParser(fields, analyzer, Map.of(
-            "title", 0.3f,
-            "contents", 1f,
-            "description", 1f))
+            "title", 0.45f,
+            "contents", 0.2f,
+            "description", 0.35f))
             .parse(queryEscape);
 
         Map<String, String[]> expansionMap = expansionTerms.getExpansionTerms();
