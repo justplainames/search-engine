@@ -84,7 +84,7 @@ export default {
       this.currentPage = page;
     },
     searchClicked() {
-      console.log("search clicked");
+      this.search();
     },
     async search() {
       const res = await this.$http
