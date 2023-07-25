@@ -80,6 +80,7 @@ export default {
       const res = await this.$http
         .post("urlQuery/", {
           json: { searchResult: payload },
+          headers: { "Content-Type": "application/json" },
         })
         .json();
       if (res.error) {
