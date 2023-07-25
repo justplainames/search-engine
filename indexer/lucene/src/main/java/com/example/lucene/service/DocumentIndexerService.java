@@ -250,6 +250,7 @@ public class DocumentIndexerService {
             keyValueMap.put("index", String.valueOf(i+1));
             keyValueMap.put("url", d.get("url"));
 //            keyValueMap.put("content", d.get("contents"));
+            keyValueMap.put("description", d.get("description"));
             keyValueMap.put("title", d.get("title"));
             keyValueMap.put("score", String.valueOf(hits[i].score));
             keyValueList.add(keyValueMap);
