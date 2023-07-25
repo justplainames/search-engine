@@ -53,26 +53,12 @@ public class DocumentIndexerService {
 
     }
     public List<Map<String, String>> urlQuerySelector(List<String> urls) throws IOException, ParseException {
+//        public List<Map<String, String>> urlQuerySelector() throws IOException, ParseException {
         closeIndexWriter();
-        List<Map<String, String>> urlValueList = new ArrayList<>();
 //        logger.info(String.valueOf(urls));
         String[] fields = {"title","url", "contents", "abstract", "description", "keywords"};; // Fields to search
         TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
-        String[] urlsToRetrieve = {
-                "https://www.encyclopedia.com/social-sciences/encyclopedias-almanacs-transcripts-and-maps/computers"
-//                "https://www.encyclopedia.com/humanities/dictionaries-thesauruses-pictures-and-press-releases/things",
-
-//                "https://www.encyclopedia.com/psychology/dictionaries-thesauruses-pictures-and-press-releases/thing",
-//                "https://www.encyclopedia.com/science/encyclopedias-almanacs-transcripts-and-maps/are-spooky-things-all-mind",
-//                "https://www.encyclopedia.com/science/news-wires-white-papers-and-books/things-are-clearer-hindsight",
-//                "https://www.encyclopedia.com/arts/culture-magazines/things-life",
-//                "https://www.encyclopedia.com/psychology/dictionaries-thesauruses-pictures-and-press-releases/thing-presentation",
-//                "https://www.encyclopedia.com/arts/culture-magazines/things-2",
-//                "https://www.encyclopedia.com/science/news-wires-white-papers-and-books/things-are-clearer-hindsight",
-//                "https://www.encyclopedia.com/arts/culture-magazines/things-life",
-//                "https://www.encyclopedia.com/arts/culture-magazines/things-happen-night"
-
-        };
+      
         try{
             Analyzer analyzer = new EnglishAnalyzer();
             IndexReader reader = DirectoryReader.open(FSDirectory.open(Paths.get(indexDir)));
@@ -87,7 +73,7 @@ public class DocumentIndexerService {
             // Combine individual queries with OR operator
             Query finalQuery = urlQueryBuilder.build();
 
-            // Step 2: Execute the query and retrieve the matching documents
+            // Retrieve the matching documents
             TopDocs topDocs = searcher.search(finalQuery, 10); // Adjust the number of desired results (e.g., top 10)
 
             // Collect the document IDs of the matching documents
@@ -98,7 +84,7 @@ public class DocumentIndexerService {
                 retrievedDocuments.put(docId, document);
             }
 
-            // Step 3: Extract the content of the retrieved documents
+            // Get contents of the retrieved documents
             Map<String, Integer> termFrequencies = new HashMap<>();
             for (Document doc : retrievedDocuments.values()) {
                 String content = doc.get("contents");
@@ -114,7 +100,7 @@ public class DocumentIndexerService {
                 tokenStream.close();
             }
 
-            // Step 4 and 5: Calculate TF-IDF scores for each term in the context of the retrieved documents
+            // Calculate TF-IDF scores for each term
             int totalDocuments = reader.maxDoc();
             Map<String, Float> tfIdfScores = new HashMap<>();
             for (Map.Entry<String, Integer> entry : termFrequencies.entrySet()) {
@@ -133,30 +119,25 @@ public class DocumentIndexerService {
                 tfIdfScores.put(term, tfIdfScore);
             }
 
-            // Step 6: Sort the terms based on TF-IDF scores in descending order
             List<Map.Entry<String, Float>> sortedTerms = new ArrayList<>(tfIdfScores.entrySet());
             sortedTerms.sort((o1, o2) -> Float.compare(o2.getValue(), o1.getValue()));
 
-            // Step 7: Select the top 10 most valuable terms
+            // Take top 10 most valuable terms
             int topTermsCount = Math.min(15, sortedTerms.size());
             List<String> topTerms = new ArrayList<>();
             for (int i = 0; i < topTermsCount; i++) {
                 topTerms.add(sortedTerms.get(i).getKey());
             }
 
-            // Step 8: Print the top 10 terms
+            // New Search with the top 10 terms
             for (String term : topTerms) {
                 String queryEscape = QueryParserUtil.escape(term);
                 Query q = new MultiFieldQueryParser(fields, analyzer, Map.of(
                         "title", 0.3f,
                         "contents", 1f,
-                        "abstract", 1f,
-                        "description", 1f,
-                        "keywords", 1f))
+                        "description", 1f))
                         .parse(queryEscape);
                 searcher.search(q, collector);
-                System.out.println("Top 10 Terms:" + term);
-
             }
 
             ScoreDoc[] hits = collector.topDocs().scoreDocs;
@@ -168,7 +149,6 @@ public class DocumentIndexerService {
                 Document d = searcher.doc(docId);
                 keyValueMap.put("index", String.valueOf(i+1));
                 keyValueMap.put("url", d.get("url"));
-                keyValueMap.put("description", d.get("description"));
 //            keyValueMap.put("content", d.get("contents"));
                 keyValueMap.put("title", d.get("title"));
                 keyValueMap.put("score", String.valueOf(hits[i].score));
@@ -186,8 +166,6 @@ public class DocumentIndexerService {
     public List<Map<String, String>> queryDocument(String query) throws IOException, ParseException {
         // index writer needs to be closed after the indexing
         closeIndexWriter();
-        List<Map<String, String>> keyValueList = new ArrayList<>();
-
 
         //===================================================
         // Search for files
@@ -196,61 +174,42 @@ public class DocumentIndexerService {
         IndexSearcher searcher = new IndexSearcher(reader);
         TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
 
+        // check what is inside query
+        // map the query to the expansion term
+        // check if term inside expansion term
+        // return the synonym
+
+
         // queryEscape prevents user from getting a lexical error if search with weird symbols
         String queryEscape = QueryParserUtil.escape(query);
 
         // Query q = new QueryParser("contents", analyzer).parse(queryEscape);
+
 
         // Create a MultiFieldQueryParser with boosts
         String[] fields = {"title", "contents", "abstract", "description", "keywords"};
         Query q = new MultiFieldQueryParser(fields, analyzer, Map.of(
             "title", 0.3f,
             "contents", 1f,
-            "abstract", 1f,
-            "description", 1f, 
-            "keywords", 1f))
+            "description", 1f))
             .parse(queryEscape);
 
-        logger.info("query: " + q);
-
         Map<String, String[]> expansionMap = expansionTerms.getExpansionTerms();
-//        logger.info("expansionMap:" + expansionMap);
-        // check if query exist in map object
-        boolean containsKey = checkKeyExists(expansionMap, query);
+        logger.info("expansionMap:" + expansionMap);
 
-        if(containsKey == true){
-            logger.info("containskey:" + containsKey);
-//            TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
-
-            String[] expansionTerms = expansionMap.get(query);
-            Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
-            searcher = new IndexSearcher(searcher.getIndexReader());
-//            collector = TopScoreDocCollector.create(10, 20);
-            searcher.search(expandedQuery, collector);
-        }
-        // return expansionTerms based on the query
-//        String[] expansionTerms = expansionMap.get(query);
-//        // perform query expansion based on expansion term
-//        Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
-        else{
-            logger.info("containskey:" + containsKey);
-//            collector = TopScoreDocCollector.create(10, 20);
-//            TopScoreDocCollector collector = TopScoreDocCollector.create(10,20);
-            searcher.search(q, collector);
-            containsKey = false;
-        }
-//        searcher.search(queryEscape, collector);
+        String[] expansionTerms = expansionMap.get(query);
+        Query expandedQuery = expandQuery(q, analyzer, expansionTerms);
+        searcher.search(expandedQuery, collector);
 
         ScoreDoc[] hits = collector.topDocs().scoreDocs;
 
-//        logger.info("Found" + hits.length + "hits.");
+        logger.info("Found" + hits.length + "hits.");
         for(int i = 0 ; i < hits.length ; ++i ){
             Map<String, String> keyValueMap = new HashMap<>();
             int docId = hits[i].doc;
             Document d = searcher.doc(docId);
             keyValueMap.put("index", String.valueOf(i+1));
             keyValueMap.put("url", d.get("url"));
-//            keyValueMap.put("content", d.get("contents"));
             keyValueMap.put("description", d.get("description"));
             keyValueMap.put("title", d.get("title"));
             keyValueMap.put("score", String.valueOf(hits[i].score));
