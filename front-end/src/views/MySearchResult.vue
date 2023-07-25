@@ -74,10 +74,12 @@ export default {
       window.open(url, "_blank");
     },
     async sendFeedback() {
-      var payload = this.searchFeedback.map((obj) => obj.url);
+      var payload = this.searchFeedback
+        .filter((obj) => obj.checked === true)
+        .map((obj) => obj.url);
       const res = await this.$http
         .post("urlQuery/", {
-          json: payload,
+          json: { searchResult: payload },
         })
         .json();
       if (res.error) {
