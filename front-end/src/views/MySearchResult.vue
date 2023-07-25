@@ -86,67 +86,28 @@ export default {
         });
       }
     },
-    search() {
-      this.searchResult = [
-        {
-          title: "This is a good title",
-          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
-          description:
-            "This is the description of this website. it is a good website as it contains many information about things and other things",
-        },
-        {
-          title: "This is a good title",
-          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
-          description:
-            "This is the description of this website. it is a good website as it contains many information about things and other things",
-        },
-        {
-          title: "This is a good title",
-          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
-          description:
-            "This is the description of this website. it is a good website as it contains many information about things and other things",
-        },
-        {
-          title: "This is a good title",
-          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
-          description:
-            "This is the description of this website. it is a good website as it contains many information about things and other things",
-        },
-        {
-          title: "This is a good title",
-          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
-          description:
-            "This is the description of this website. it is a good website as it contains many information about things and other things",
-        },
-        {
-          title: "This is a good title",
-          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
-          description:
-            "This is the description of this website. it is a good website as it contains many information about things and other things",
-        },
-        {
-          title: "This is a good title",
-          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
-          description:
-            "This is the description of this website. it is a good website as it contains many information about things and other things",
-        },
-        {
-          title: "This is a good title",
-          url: "https://www.encyclopedia.com/places/britain-ireland-france-and-low-countries/british-and-irish-political-geography/glasgow",
-          description:
-            "This is the description of this website. it is a good website as it contains many information about things and other things",
-        },
-      ];
-      this.loaded = true;
-    },
+
     redirectToLink(url) {
       window.open(url, "_blank");
+    },
+    async sendFeedback() {
+      const res = await this.$http
+        .post("urlQuery/", {
+          json: {},
+        })
+        .json();
+      if (res.error) {
+        console.log(res.error);
+      } else {
+        this.searchResult = res;
+      }
+      this.loaded = true;
     },
   },
   mounted() {
     this.searchQuery = this.$route.params.query;
     this.searchFeedback = this.$route.params.feedback;
-    this.search();
+    this.sendFeedback();
   },
 };
 </script>

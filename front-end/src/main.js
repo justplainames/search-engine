@@ -6,7 +6,7 @@ import ky from "ky";
 Vue.config.productionTip = false;
 
 const api = ky.create({
-  prefixUrl: "https://123asd123testexample.com",
+  prefixUrl: "http://localhost:8080/",
   throwHttpErrors: false,
 });
 
